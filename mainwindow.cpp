@@ -1,0 +1,160 @@
+/* ---------------------------------------------------------------------------
+** This software is furnished "as is", without technical
+** support, and with no warranty, express or implied, as to its usefulness for
+** any purpose.
+**
+** File Name: mainwindow.cpp
+**
+** Rebarlinx software
+**
+** Author: Michael W. Hoag
+** Copyright Michael W. Hoag 2018
+** Email: mike@ndtjames.com
+**
+** 3/23/18 Initial Creation
+** -------------------------------------------------------------------------*/
+
+#include "mainwindow.h"
+
+MainWindow::MainWindow()
+{
+    QWidget *widget = new QWidget;
+    setCentralWidget(widget);
+
+    QWidget *topFiller = new QWidget;
+    topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    infoLabel = new QLabel(tr("<i>Choose a menu option, or right-click to "
+                              "invoke a context menu</i>"));
+    infoLabel->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    infoLabel->setAlignment(Qt::AlignCenter);
+
+    QWidget *bottomFiller = new QWidget;
+    bottomFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setMargin(5);
+    layout->addWidget(topFiller);
+    layout->addWidget(infoLabel);
+    layout->addWidget(bottomFiller);
+    widget->setLayout(layout);
+
+    createActions();
+    createMenus();
+
+    QString message = tr("A context menu is available by right-clicking");
+    statusBar()->showMessage(message);
+
+    setWindowTitle(tr("RebarLinx"));
+    setMinimumSize(160, 160);
+    resize(960, 640);
+}
+
+void MainWindow::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu menu(this);
+    menu.addAction(copyAct);
+    menu.exec(event->globalPos());
+}
+
+void MainWindow::MenuActNewFile()
+{
+    infoLabel->setText(tr("Invoked <b>File|New</b>"));
+}
+
+void MainWindow::MenuActOpen()
+{
+    infoLabel->setText(tr("Invoked <b>File|Open</b>"));
+}
+
+void MainWindow::MenuActSave()
+{
+    infoLabel->setText(tr("Invoked <b>File|Save</b>"));
+}
+
+void MainWindow::MenuActCopy()
+{
+    infoLabel->setText(tr("Invoked <b>Edit|Copy</b>"));
+}
+
+void MainWindow::MenuActPlot()
+{
+    infoLabel->setText(tr("Invoked <b>Graph|Plot</b>"));
+}
+
+void MainWindow::MenuActAbout()
+{
+    infoLabel->setText(tr("Invoked <b>Help|About</b>"));
+    QMessageBox::about(this, tr("About Menu"),
+            tr("The <b>Menu</b> example shows how to create "
+               "menu-bar menus and context menus."));
+}
+
+void MainWindow::aboutQt()
+{
+    infoLabel->setText(tr("Invoked <b>Help|About Qt</b>"));
+}
+
+void MainWindow::createActions()
+{
+
+    newAct = new QAction(tr("&New"), this);
+    newAct->setShortcuts(QKeySequence::New);
+    newAct->setStatusTip(tr("Create a new file"));
+    connect(newAct, &QAction::triggered, this, &MainWindow::MenuActNewFile);
+
+    openAct = new QAction(tr("&Open..."), this);
+    openAct->setShortcuts(QKeySequence::Open);
+    openAct->setStatusTip(tr("Open an existing file"));
+    connect(openAct, &QAction::triggered, this, &MainWindow::MenuActOpen);
+
+    saveAct = new QAction(tr("&Save"), this);
+    saveAct->setShortcuts(QKeySequence::Save);
+    saveAct->setStatusTip(tr("Save the document to disk"));
+    connect(saveAct, &QAction::triggered, this, &MainWindow::MenuActSave);
+
+    exitAct = new QAction(tr("E&xit"), this);
+    exitAct->setShortcuts(QKeySequence::Quit);
+    exitAct->setStatusTip(tr("Exit the application"));
+    connect(exitAct, &QAction::triggered, this, &QWidget::close);
+
+    copyAct = new QAction(tr("&Copy"), this);
+    copyAct->setShortcuts(QKeySequence::Copy);
+    copyAct->setStatusTip(tr("Copy the current selection's contents to the "
+                             "clipboard"));
+    connect(copyAct, &QAction::triggered, this, &MainWindow::MenuActCopy);
+
+    PlotAct = new QAction(tr("&Plot"), this);
+//    copyAct->setShortcuts(QKeySequence::Copy);
+    PlotAct->setStatusTip(tr("Plots the data uploaded"));
+    connect(PlotAct, &QAction::triggered, this, &MainWindow::MenuActPlot);
+
+    aboutAct = new QAction(tr("&About"), this);
+    aboutAct->setStatusTip(tr("Show the application's About box"));
+    connect(aboutAct, &QAction::triggered, this, &MainWindow:: MenuActAbout);
+
+    aboutQtAct = new QAction(tr("About &Qt"), this);
+    aboutQtAct->setStatusTip(tr("Show the Qt library's About box"));
+    connect(aboutQtAct, &QAction::triggered, qApp, &QApplication::aboutQt);
+    connect(aboutQtAct, &QAction::triggered, this, &MainWindow::aboutQt);
+}
+
+void MainWindow::createMenus()
+{
+    FileMenu = menuBar()->addMenu(tr("&File"));
+    FileMenu->addAction(newAct);
+    FileMenu->addAction(openAct);
+    FileMenu->addAction(saveAct);
+    FileMenu->addSeparator();
+    FileMenu->addAction(exitAct);
+
+    EditMenu = menuBar()->addMenu(tr("&Edit"));
+    EditMenu->addAction(copyAct);
+
+    GraphMenu = menuBar()->addMenu(tr("&Graph"));
+    GraphMenu->addAction(PlotAct);
+
+    helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->addAction(aboutAct);
+    helpMenu->addAction(aboutQtAct);
+}
