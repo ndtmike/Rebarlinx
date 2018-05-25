@@ -36,22 +36,74 @@
 ** support, and with no warranty, express or implied, as to its usefulness for
 ** any purpose.
 **
-** File Name: main.cpp
+** File Name: settingsdialog.h
 **
-** main.cpp - reboundlinx software
+** Header file for settingsdialog.cpp - reboundlinx software
 **
 ** Author: Michael W. Hoag
 ** Copyright Michael W. Hoag 2015
 ** Email: mike@ndtjames.com
 ** -------------------------------------------------------------------------*/
-#include <QApplication>
+#ifndef SETTINGSDIALOG_H
+#define SETTINGSDIALOG_H
 
-#include "mainwindow.h"
+#include <QDialog>
+#include <QtSerialPort/QSerialPort>
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
-    return a.exec();
+QT_USE_NAMESPACE
+
+QT_BEGIN_NAMESPACE
+
+namespace Ui {
+class SettingsDialog;
 }
+
+class QIntValidator;
+
+QT_END_NAMESPACE
+
+class SettingsDialog : public QDialog
+{
+    Q_OBJECT
+
+public:
+    struct Settings {
+        QString name;
+        qint32 baudRate;
+        QString stringBaudRate;
+        QSerialPort::DataBits dataBits;
+        QString stringDataBits;
+        QSerialPort::Parity parity;
+        QString stringParity;
+        QSerialPort::StopBits stopBits;
+        QString stringStopBits;
+        QSerialPort::FlowControl flowControl;
+        QString stringFlowControl;
+        bool localEchoEnabled;
+    };
+
+    explicit SettingsDialog(QWidget *parent = 0);
+    ~SettingsDialog();
+
+    Settings settings() const;
+
+    void checkPort();
+
+private slots:
+    void showPortInfo(int idx);
+    void apply();
+    void checkCustomBaudRatePolicy(int idx);
+    void checkCustomDevicePathPolicy(int idx);
+
+private:
+//    void fillPortsParameters();
+    void fillPortsInfo();
+    void updateSettings();
+
+private:
+    Ui::SettingsDialog *ui;
+    Settings currentSettings;
+    QIntValidator *intValidator;
+};
+
+#endif // SETTINGSDIALOG_H

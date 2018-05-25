@@ -1,3 +1,36 @@
+/****************************************************************************
+**
+** Copyright (C) 2012 Denis Shienkov <denis.shienkov@gmail.com>
+** Copyright (C) 2012 Laszlo Papp <lpapp@kde.org>
+** Contact: http://www.qt.io/licensing/
+**
+** This file is part of the QtSerialPort module of the Qt Toolkit.
+**
+** $QT_BEGIN_LICENSE:LGPL21$
+** Commercial License Usage
+** Licensees holding valid commercial Qt licenses may use this file in
+** accordance with the commercial license agreement provided with the
+** Software or, alternatively, in accordance with the terms contained in
+** a written agreement between you and The Qt Company. For licensing terms
+** and conditions see http://www.qt.io/terms-conditions. For further
+** information use the contact form at http://www.qt.io/contact-us.
+**
+** GNU Lesser General Public License Usage
+** Alternatively, this file may be used under the terms of the GNU Lesser
+** General Public License version 2.1 or version 3 as published by the Free
+** Software Foundation and appearing in the file LICENSE.LGPLv21 and
+** LICENSE.LGPLv3 included in the packaging of this file. Please review the
+** following information to ensure the GNU Lesser General Public License
+** requirements will be met: https://www.gnu.org/licenses/lgpl.html and
+** http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
+**
+** As a special exception, The Qt Company gives you certain additional
+** rights. These rights are described in The Qt Company LGPL Exception
+** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
+**
+** $QT_END_LICENSE$
+**
+****************************************************************************/
 /* ---------------------------------------------------------------------------
 ** This software is furnished "as is", without technical
 ** support, and with no warranty, express or implied, as to its usefulness for
@@ -5,156 +38,265 @@
 **
 ** File Name: mainwindow.cpp
 **
-** Rebarlinx software
+** mainwindow.cpp - reboundlinx software
 **
 ** Author: Michael W. Hoag
-** Copyright Michael W. Hoag 2018
+** Copyright Michael W. Hoag 2015
 ** Email: mike@ndtjames.com
-**
-** 3/23/18 Initial Creation
 ** -------------------------------------------------------------------------*/
-
 #include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include "console.h"
+#include "settingsdialog.h"
+#include "reboundlinxsplash.h"
+#include "parser.h"
 
-MainWindow::MainWindow()
+#include <QtSerialPort/QSerialPort>
+#include <QProcess>
+
+
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
 {
-    QWidget *widget = new QWidget;
-    setCentralWidget(widget);
+    ui->setupUi(this);
+    console = new Console;
+    console->setEnabled(false);
+    setCentralWidget(console);
+    serial = new QSerialPort(this);
+    settings = new SettingsDialog;
+    serialTimeOut = new QTimer(this);
+    ui->actionQuit->setEnabled(true);
 
-    QWidget *topFiller = new QWidget;
-    topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    initActionsConnections();
 
-    infoLabel = new QLabel(tr("<i>Choose a menu option, or right-click to "
-                              "invoke a context menu</i>"));
-    infoLabel->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    infoLabel->setAlignment(Qt::AlignCenter);
+    connect(serial, SIGNAL(error(QSerialPort::SerialPortError)), this,
+            SLOT(handleError(QSerialPort::SerialPortError)));
+    connect(serial, SIGNAL(readyRead()), this, SLOT(readData()));
 
-    QWidget *bottomFiller = new QWidget;
-    bottomFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    connect(console, SIGNAL(getData(QByteArray)), this, SLOT(writeData(QByteArray)));
 
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->setMargin(5);
-    layout->addWidget(topFiller);
-    layout->addWidget(infoLabel);
-    layout->addWidget(bottomFiller);
-    widget->setLayout(layout);
+    connect(serialTimeOut,SIGNAL(timeout()), this,SLOT(endUpload()));
 
-    createActions();
-    createMenus();
-
-    QString message = tr("A context menu is available by right-clicking");
-    statusBar()->showMessage(message);
-
-    setWindowTitle(tr("RebarLinx"));
-    setMinimumSize(160, 160);
-    resize(960, 640);
+    QTimer* init_timer = new QTimer(this);
+    init_timer->singleShot(100, this, SLOT(showSplash()));
 }
 
-void MainWindow::contextMenuEvent(QContextMenuEvent *event)
+MainWindow::~MainWindow()
 {
-    QMenu menu(this);
-    menu.addAction(copyAct);
-    menu.exec(event->globalPos());
+    closeSerialPort();
+    delete settings;
+    delete ui;
 }
 
-void MainWindow::MenuActNewFile()
+void MainWindow::openSerialPort()
 {
-    infoLabel->setText(tr("Invoked <b>File|New</b>"));
+    SettingsDialog::Settings p = settings->settings();
+    serial->setBaudRate(p.baudRate);
+    serial->setDataBits(p.dataBits);
+    serial->setParity(p.parity);
+    serial->setStopBits(p.stopBits);
+    serial->setFlowControl(p.flowControl);
+    if (serial->open(QIODevice::ReadOnly)) {
+            console->setEnabled(true);
+            console->setLocalEchoEnabled(p.localEchoEnabled);
+            ui->statusBar->showMessage(tr("Connected"));
+    } else {
+        QMessageBox::critical(this, tr("Error"), serial->errorString());
+
+        ui->statusBar->showMessage(tr("Open error"));
+    }
 }
 
-void MainWindow::MenuActOpen()
+void MainWindow::closeSerialPort()
 {
-    infoLabel->setText(tr("Invoked <b>File|Open</b>"));
+    if (serial->isOpen())
+        serial->close();
+    console->setEnabled(false);
+    ui->statusBar->showMessage(tr("Disconnected"));
 }
 
-void MainWindow::MenuActSave()
+void MainWindow::about()
 {
-    infoLabel->setText(tr("Invoked <b>File|Save</b>"));
+    QString s;
+    QTextStream toabout(&s);
+
+    toabout << tr("The <b>Reboundlinx Software</b> is used with the <br>") <<
+               tr("<b><i>James Instruments Inc.</i></b> Digital Rebound Hammers.<br><br>")<<
+               tr("USA: +1773.4636565<br>")<<
+               tr("Europe: +31.548.659032<br>")<<
+               tr("Email: <a href=\"mailto:info@ndtjames.com?Subject=Reboundlinx\" target=\"_top\">info@ndtjames.com</a><br>")<<
+               tr("Web: <a href=\"http://www.ndtjames.com\">http://www.ndtjames.com</a><br>");
+
+    QMessageBox::information(this, tr("About Reboundlinx"), s);
 }
 
-void MainWindow::MenuActCopy()
+void MainWindow::help()
 {
-    infoLabel->setText(tr("Invoked <b>Edit|Copy</b>"));
+    QProcess* help = new QProcess(this);
+    help->start("hh.exe reboundlinx.chm");
 }
 
-void MainWindow::MenuActPlot()
+void MainWindow::writeData(const QByteArray &data)
 {
-    infoLabel->setText(tr("Invoked <b>Graph|Plot</b>"));
+    serial->write(data);
 }
 
-void MainWindow::MenuActAbout()
+void MainWindow::readData()
 {
-    infoLabel->setText(tr("Invoked <b>Help|About</b>"));
-    QMessageBox::about(this, tr("About Menu"),
-            tr("The <b>Menu</b> example shows how to create "
-               "menu-bar menus and context menus."));
+    QFile file("rd.txt");
+    QTextStream out(&file);
+    serialTimeOut->start(500);
+    QByteArray data = serial->readAll();
+    console->putData(data);
+    if(!file.open(QIODevice::Append)){
+        QMessageBox::information(this, "readData", tr("Cannot write rd.txt"));
+    }else{
+        out<<data;
+    }
+    file.close();
 }
 
-void MainWindow::aboutQt()
+void MainWindow::handleError(QSerialPort::SerialPortError error)
 {
-    infoLabel->setText(tr("Invoked <b>Help|About Qt</b>"));
+    if (error == QSerialPort::ResourceError) {
+        QMessageBox::critical(this, tr("Critical Error"), serial->errorString());
+        closeSerialPort();
+    }
 }
 
-void MainWindow::createActions()
+void MainWindow::initActionsConnections()
 {
-
-    newAct = new QAction(tr("&New"), this);
-    newAct->setShortcuts(QKeySequence::New);
-    newAct->setStatusTip(tr("Create a new file"));
-    connect(newAct, &QAction::triggered, this, &MainWindow::MenuActNewFile);
-
-    openAct = new QAction(tr("&Open..."), this);
-    openAct->setShortcuts(QKeySequence::Open);
-    openAct->setStatusTip(tr("Open an existing file"));
-    connect(openAct, &QAction::triggered, this, &MainWindow::MenuActOpen);
-
-    saveAct = new QAction(tr("&Save"), this);
-    saveAct->setShortcuts(QKeySequence::Save);
-    saveAct->setStatusTip(tr("Save the document to disk"));
-    connect(saveAct, &QAction::triggered, this, &MainWindow::MenuActSave);
-
-    exitAct = new QAction(tr("E&xit"), this);
-    exitAct->setShortcuts(QKeySequence::Quit);
-    exitAct->setStatusTip(tr("Exit the application"));
-    connect(exitAct, &QAction::triggered, this, &QWidget::close);
-
-    copyAct = new QAction(tr("&Copy"), this);
-    copyAct->setShortcuts(QKeySequence::Copy);
-    copyAct->setStatusTip(tr("Copy the current selection's contents to the "
-                             "clipboard"));
-    connect(copyAct, &QAction::triggered, this, &MainWindow::MenuActCopy);
-
-    PlotAct = new QAction(tr("&Plot"), this);
-//    copyAct->setShortcuts(QKeySequence::Copy);
-    PlotAct->setStatusTip(tr("Plots the data uploaded"));
-    connect(PlotAct, &QAction::triggered, this, &MainWindow::MenuActPlot);
-
-    aboutAct = new QAction(tr("&About"), this);
-    aboutAct->setStatusTip(tr("Show the application's About box"));
-    connect(aboutAct, &QAction::triggered, this, &MainWindow:: MenuActAbout);
-
-    aboutQtAct = new QAction(tr("About &Qt"), this);
-    aboutQtAct->setStatusTip(tr("Show the Qt library's About box"));
-    connect(aboutQtAct, &QAction::triggered, qApp, &QApplication::aboutQt);
-    connect(aboutQtAct, &QAction::triggered, this, &MainWindow::aboutQt);
+    connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(about()));
+    connect(ui->actionSaveAs, SIGNAL(triggered()), this, SLOT(saveAs()));
+    connect(ui->actionCopy, SIGNAL(triggered()), this, SLOT(copy()));
+    connect(ui->actionHelp, SIGNAL(triggered()), this, SLOT(help()));
 }
 
-void MainWindow::createMenus()
+void MainWindow::reboundlinxData(){
+
+    const QString rawdata = "rd.txt";
+    const QString outputfile = "reboundlinx.txt";
+    QFile file(outputfile);
+
+    file.remove();
+//    if(!file.remove())
+//        QMessageBox::information(this,"reboundlinxData",tr("Unable to Remove reboundlinx.txt!"));
+    new Parser( rawdata );
+}
+
+void MainWindow::processSerialPort()
 {
-    FileMenu = menuBar()->addMenu(tr("&File"));
-    FileMenu->addAction(newAct);
-    FileMenu->addAction(openAct);
-    FileMenu->addAction(saveAct);
-    FileMenu->addSeparator();
-    FileMenu->addAction(exitAct);
+    foundSerialPort = checkSerialPort();
+    if(foundSerialPort){openSerialPort();}
+}
 
-    EditMenu = menuBar()->addMenu(tr("&Edit"));
-    EditMenu->addAction(copyAct);
+void MainWindow::showSplash()
+{
+    const int five_sec = 5000;
 
-    GraphMenu = menuBar()->addMenu(tr("&Graph"));
-    GraphMenu->addAction(PlotAct);
+    ReboundLinxSplash* splash = new ReboundLinxSplash();
+    splash->setModal( true );
+    splash->show();
 
-    helpMenu = menuBar()->addMenu(tr("&Help"));
-    helpMenu->addAction(aboutAct);
-    helpMenu->addAction(aboutQtAct);
+    QTimer* splash_timer = new QTimer(this);
+    splash_timer->singleShot(five_sec, this, SLOT(processSerialPort()));
+}
+
+bool MainWindow::checkSerialPort()
+{
+    QString description;
+    QString manufacturer;
+    QString portname;
+    const QString portmanufacturer = "FTDI";
+    const QString noport = tr("No Available Ports\nCheck instrument is plugged in\nor serial port installed properly\n then restart Reboundlinx");
+    const QString messageTitle = "checkSerialPort";
+    const QString connected = tr("Connected to ");
+    QList <QSerialPortInfo> availablePorts;
+    bool r = false;
+    availablePorts = QSerialPortInfo::availablePorts();
+
+    if(!availablePorts.isEmpty()){
+        foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
+        {
+            portname = info.portName();
+            description = info.description();
+            manufacturer = info.manufacturer();
+            if(manufacturer == portmanufacturer){
+                serial->setPortName(portname);
+                r = true;
+            }
+        if( r == true )break;
+        }
+    }
+    if(r == false){
+        QMessageBox::information(this,messageTitle,noport);
+    }else{
+        QMessageBox::information(this ,messageTitle , connected + portname );
+    }
+    return(r);
+}
+
+void MainWindow::endUpload()
+{
+    const QString outputfile = "reboundlinx.txt";
+    QFile file(outputfile);
+
+    serialTimeOut->stop();
+    QMessageBox::information(this, "endUpload", tr("Upload Complete"));
+#ifndef QT_NO_CURSOR
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+#endif
+    reboundlinxData();
+    console->setPlainText("");
+    file.open(QFile::ReadOnly | QFile::Text);
+    QTextStream ReadFile(&file);
+    console->setPlainText(ReadFile.readAll());
+#ifndef QT_NO_CURSOR
+    QApplication::restoreOverrideCursor();
+#endif
+}
+
+bool MainWindow::saveFile(const QString &fileName)
+{
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QMessageBox::warning(this, tr("Application"),
+                             tr("Cannot write file %1:\n%2.")
+                             .arg(fileName)
+                             .arg(file.errorString()));
+        return false;
+    }
+
+    QTextStream out(&file);
+#ifndef QT_NO_CURSOR
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+#endif
+    out << console->toPlainText();
+#ifndef QT_NO_CURSOR
+    QApplication::restoreOverrideCursor();
+#endif
+    return true;
+}
+
+bool MainWindow::saveAs()
+{
+    QFileDialog dialog(this);
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setNameFilter(tr("Text (*.txt)"));
+    QStringList files;
+    if (dialog.exec())
+        files = dialog.selectedFiles();
+    else
+        return false;
+
+    return saveFile(files.at(0));
+}
+
+void MainWindow::copy()
+{
+    console->selectAll();
+    console->copy();
 }
