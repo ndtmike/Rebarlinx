@@ -1,10 +1,18 @@
 /****************************************************************************
 **
-** Copyright (C) 2012 Denis Shienkov <denis.shienkov@gmail.com>
-** Copyright (C) 2012 Laszlo Papp <lpapp@kde.org>
-** Contact: http://www.qt.io/licensing/
+** This software is furnished "as is", without technical
+** support, and with no warranty, express or implied, as to its usefulness for
+** any purpose.
 **
-** This file is part of the QtSerialPort module of the Qt Toolkit.
+** File Name: mainwindow.h
+**
+** mainwindow.cpp Rebarlinx software
+**
+** Author: Michael W. Hoag
+** Copyright Michael W. Hoag 2018
+** Email: mike@ndtjames.com
+**
+** 6/16/18 Initial Creation
 **
 ** $QT_BEGIN_LICENSE:LGPL21$
 ** Commercial License Usage
@@ -31,43 +39,26 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-/* ---------------------------------------------------------------------------
-** This software is furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** File Name: mainwindow.h
-**
-** Header file for mainwindow.h - reboundlinx software
-**
-** Author: Michael W. Hoag
-** Copyright Michael W. Hoag 2015
-** Email: mike@ndtjames.com
-** -------------------------------------------------------------------------*/
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QtCore/QtGlobal>
-#include <QIODevice>
 #include <QMainWindow>
-#include <QTextStream>
-#include <QMessageBox>
-#include <QFileDialog>
+#include <QtCore/QtGlobal>
 #include <QtSerialPort/QSerialPort>
-#include <QSerialPortInfo>
-#include <QTimer>
-#include <QList>
+#include <QtWidgets>
 
 QT_BEGIN_NAMESPACE
-
-namespace Ui {
-class MainWindow;
-}
-
+class QAction;
+class QActionGroup;
+class QLabel;
+class QMenu;
+class QSerialPort;
+class QSerialPortInfo;
 QT_END_NAMESPACE
 
 class Console;
-class SettingsDialog;
+//class SettingsDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -78,33 +69,56 @@ public:
     ~MainWindow();
 
 private slots:
-    void openSerialPort();
-    void closeSerialPort();
-    void processSerialPort();
-    void about();
-    void help();
-    void writeData(const QByteArray &data);
-    void readData();
+    void MenuActAbout();
+    void MenuActCopy();
+    void MenuActNewFile();
+    void MenuActOpen();
+    void MenuActPlot();
+    void MenuActSave();
+
+    void SerialPortOpen();
+    void SerialPortClose();
+    void SerialPortWriteData(const QByteArray &data);
+    void SerialPortReadData();
 
     void handleError(QSerialPort::SerialPortError error);
-    void showSplash();
-    void endUpload();
-    bool saveAs();
-    void copy();
-
+/*
 private:
     void initActionsConnections();
-    void reboundlinxData();
-    bool checkSerialPort();
-    bool foundSerialPort;
-    bool saveFile(const QString &fileName);
-
+*/
 private:
-    Ui::MainWindow *ui;
+    void CreateActions();
+    void CreateMenus();
+
+    QMenu *FileMenu;
+    QMenu *EditMenu;
+    QMenu *GraphMenu;
+    QMenu *helpMenu;
+
+    QAction *aboutAct;
+    QAction *aboutQtAct;
+    QAction *copyAct;
+    QAction *exitAct;
+
+    QAction *newAct;
+    QAction *openAct;
+    QAction *PlotAct;
+    QAction *saveAct;
+
+    QLabel *infoLabel;
+
+//    QwtPlot *Plot;
+
+    QSerialPort *Serial;
+
+    QByteArray Data;
+    void showStatusMessage(const QString &message);
+
+//    Ui::MainWindow *ui;
+    QLabel *status;
     Console *console;
-    SettingsDialog *settings;
+    //SettingsDialog *settings;
     QSerialPort *serial;
-    QTimer *serialTimeOut;
 };
 
 #endif // MAINWINDOW_H

@@ -1,10 +1,18 @@
 /****************************************************************************
 **
-** Copyright (C) 2012 Denis Shienkov <denis.shienkov@gmail.com>
-** Copyright (C) 2012 Laszlo Papp <lpapp@kde.org>
-** Contact: http://www.qt.io/licensing/
+** This software is furnished "as is", without technical
+** support, and with no warranty, express or implied, as to its usefulness for
+** any purpose.
 **
-** This file is part of the QtSerialPort module of the Qt Toolkit.
+** File Name: console.h
+**
+** console.cpp Rebarlinx software
+**
+** Author: Michael W. Hoag
+** Copyright Michael W. Hoag 2018
+** Email: mike@ndtjames.com
+**
+** 6/16/18 Initial Creation
 **
 ** $QT_BEGIN_LICENSE:LGPL21$
 ** Commercial License Usage
@@ -31,19 +39,7 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-/* ---------------------------------------------------------------------------
-** This software is furnished "as is", without technical
-** support, and with no warranty, express or implied, as to its usefulness for
-** any purpose.
-**
-** File Name: console.h
-**
-** Header file for console.cpp - reboundlinx software
-**
-** Author: Michael W. Hoag
-** Copyright Michael W. Hoag 2015
-** Email: mike@ndtjames.com
-** -------------------------------------------------------------------------*/
+
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
@@ -60,7 +56,6 @@ public:
     explicit Console(QWidget *parent = 0);
 
     void putData(const QByteArray &data);
-
 
     void setLocalEchoEnabled(bool set);
 
