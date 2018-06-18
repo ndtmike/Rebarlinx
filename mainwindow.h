@@ -46,6 +46,7 @@
 #include <QMainWindow>
 #include <QtCore/QtGlobal>
 #include <QtSerialPort/QSerialPort>
+#include <QSerialPortInfo>
 #include <QtWidgets>
 
 QT_BEGIN_NAMESPACE
@@ -67,6 +68,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    Dialog(QWidget *parent = 0);
+
 private slots:
     void MenuActAbout();
     void MenuActCopy();
@@ -75,17 +78,23 @@ private slots:
     void MenuActPlot();
     void MenuActSave();
 
-    void SerialPortOpen();
     void SerialPortClose();
-    void SerialPortWriteData(const QByteArray &data);
+    void SerialPortHandleError(QSerialPort::SerialPortError error);
+    void SerialPortOpen();
     void SerialPortReadData();
+    void SerialPortWriteData(const QByteArray &data);
 
-    void handleError(QSerialPort::SerialPortError error);
+
 
 private:
     void CreateActions();
     void CreateMenus();
+    void CreateSplash();
     void CreateStatusBar();
+
+    void SerialCheckPort();
+
+
 
     QMenu *FileMenu;
     QMenu *EditMenu;

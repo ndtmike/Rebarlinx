@@ -61,6 +61,13 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
+#ifdef R_DEBUG
+    const int splashscreendelay = 1;
+#else
+    const int splashscreendelay =100;
+#endif
+
+
     console = new Console;
     console->setEnabled(false);
     setCentralWidget(console);
@@ -70,6 +77,10 @@ MainWindow::MainWindow(QWidget *parent) :
     CreateActions();
     CreateMenus();
     CreateStatusBar();
+    CreateSplash();
+
+    QTimer* init_timer = new QTimer(this);
+        init_timer->singleShot(splashscreendelay, this, SLOT(CreateSplash())); //delay before splash screen
 }
 
 MainWindow::~MainWindow()
@@ -126,7 +137,7 @@ void MainWindow::CreateActions()
     connect(aboutQtAct, &QAction::triggered, qApp, &QApplication::aboutQt);
 
     connect(serial, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
-            this, &MainWindow::handleError);
+            this, &MainWindow::SerialPortHandleError);
     connect(serial, &QSerialPort::readyRead, this, &MainWindow::SerialPortReadData);
     connect(console, &Console::getData, this, &MainWindow::SerialPortWriteData);
 }
@@ -169,6 +180,21 @@ void MainWindow::CreateMenus()
   Creates the Menu items
 
 ******************************************************************************/
+void MainWindow::CreateSplash()
+{
+//    Dialog dialog;
+//    dialog.show();
+}
+
+/******************************************************************************
+
+  Function: CreateStatuBar
+
+  Description:
+  ============
+  Creates the Menu items
+
+******************************************************************************/
 void MainWindow::CreateStatusBar()
 {
     status = new QLabel(" Not Connected ");
@@ -198,9 +224,13 @@ void MainWindow::CreateStatusBar()
 ******************************************************************************/
 void MainWindow::MenuActAbout()
 {
-    const QString about_rebarlinx = tr("The <b>Rebarlinx Sofware</b> is for use with "
-                                         "the James Instruments Inc.<br>"
-                                         "<a href=\"https://www.ndtjames.com/Rebarscope-Complete-System-p/r-c-4.htm\">Rebarscope</a><br>");
+    const QString about_rebarlinx = tr("The <b>Rebarlinx Sofware</b> is for use with <br>"
+                                       "the James Instruments Inc.<br>"
+                                       "<a href=\"https://www.ndtjames.com/Rebarscope-Complete-System-p/r-c-4.htm\">Rebarscope</a><br>"
+                                       "USA: +1773.4636565<br>"
+                                       "Europe: +31.548.659032<br>"
+                                       "Email: <a href=\"mailto:info@ndtjames.com?Subject=Rebarlinx\" target=\"_top\">info@ndtjames.com</a><br>"
+                                       "Copyright 2017<br>");
     const QString version =  QString::QString("<br> Software Version <<br> <b>%1.%2.%3</b>").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH);
 
     QString show = about_rebarlinx + version;
@@ -282,6 +312,53 @@ void MainWindow::MenuActSave()
 
 /******************************************************************************
 
+  Function: SerialCheckPort()
+
+  Description:
+  ============
+  Checks that an instrument is connected to the PC
+
+******************************************************************************/
+void MainWindow::SerialCheckPort()
+{
+    QString description;
+    QString manufacturer;
+    QString portname;
+
+    const QString portmanufacturer = "FTDI";
+    const QString noport = tr("No Available Ports") + '\n'
+                              + tr("Check instrument is plugged in") + '\n'
+                              + tr("or serial port installed properly") + '\n'
+                              + tr("then restart Veelinx");
+    const QString messageTitle = tr("Check Serial Port");
+    const QString connected = tr("Connected to ");
+    QList <QSerialPortInfo> availablePorts;
+    bool r = false;
+    availablePorts = QSerialPortInfo::availablePorts();
+
+    if(!availablePorts.isEmpty()){
+        foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
+        {
+            portname = info.portName();
+            description = info.description();
+            manufacturer = info.manufacturer();
+            if(manufacturer == portmanufacturer){
+                serial->setPortName(portname);
+                r = true;
+            }
+        if( r == true ) break;
+        }
+    }
+    if(r == false){
+        QMessageBox::information(this,messageTitle,noport);
+    }else{
+        QMessageBox::information(this ,messageTitle , connected + portname );
+        SerialPortOpen(); // Found the instrument open the port
+    }
+}
+
+/******************************************************************************
+
   Function: SerialPortOpen
 
   Description:
@@ -298,17 +375,17 @@ void MainWindow::SerialPortOpen()
     serial->setParity(p.parity);
     serial->setStopBits(p.stopBits);
     serial->setFlowControl(p.flowControl);*/
-    if (serial->open(QIODevice::ReadWrite)) {
-        console->setEnabled(true);
+//    if (Serial->open(QIODevice::ReadWrite)) {
+//        Console->setEnabled(true);
 //        console->setLocalEchoEnabled(p.localEchoEnabled);
 //        showStatusMessage(tr("Connected to %1 : %2, %3, %4, %5, %6")
 //                          .arg(p.name).arg(p.stringBaudRate).arg(p.stringDataBits)
 //                          .arg(p.stringParity).arg(p.stringStopBits).arg(p.stringFlowControl));
-    } else {
-        QMessageBox::critical(this, tr("Error"), serial->errorString());
+//    } else {
+//        QMessageBox::critical(this, tr("Error"), serial->errorString());
 
 //        showStatusMessage(tr("Open error"));
-    }
+//    }
 }
 
 /******************************************************************************
@@ -366,10 +443,10 @@ void MainWindow::SerialPortWriteData(const QByteArray &data)
 
 
 ******************************************************************************/
-void MainWindow::handleError(QSerialPort::SerialPortError error)
+void MainWindow::SerialPortHandleError(QSerialPort::SerialPortError error)
 {
     if (error == QSerialPort::ResourceError) {
-        QMessageBox::critical(this, tr("Critical Error"), serial->errorString());
+//        QMessageBox::critical(this, tr("Critical Error"), Serial->errorString());
         SerialPortClose();
     }
 }

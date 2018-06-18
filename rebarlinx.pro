@@ -1,13 +1,11 @@
 ################################################################
-# rebarlinx
+# Rebarlinx
 # Copyright (C) 2018   Michael W Hoag
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the Rebarlinx License, Version 1.0
 ################################################################
-
 include( rebarlinxconfig.pri )
-
-#DEFINES += VERSION_MAJOR
-
-#DEFINES += PI="\"3.1415926\""
 
 QT += widgets serialport
 
@@ -28,7 +26,6 @@ CONFIG += \
     C++14
 
 win32{
-
     RC_ICONS += ../icon/ndt_rebarlinx.ico
     VERSION = $$(REE_VERSION)
     QMAKE_TARGET_COMPANY = James Instruments Inc.
@@ -41,23 +38,22 @@ win32{
         message("Win 32-bit")
         win32:CONFIG(release, debug|release):    LIBS += -LC:/qwt-6.1.3-MSVC32/lib -lqwt
         else:win32:CONFIG(debug, debug|release): LIBS += -LC:/qwt-6.1.3-MSVC32/lib -lqwtd
-
         INCLUDEPATH += C:/qwt-6.1.3-MSVC32/include
         DEPENDPATH +=  C:/qwt-6.1.3-MSVC32/include
-        message( $$LIBS )
-        message( $$INCLUDEPATH )
     }else {
         message("Win 64-bit")
         win32:CONFIG(release, debug|release):    LIBS += -LC:/qwt-6.1.3-MSVC64/lib -lqwt
         else:win32:CONFIG(debug, debug|release): LIBS += -LC:/qwt-6.1.3-MSVC64/lib -lqwtd
-
         INCLUDEPATH += C:/qwt-6.1.3-MSVC64/include
         DEPENDPATH +=  C:/qwt-6.1.3-MSVC64/include
-
-        message( $$LIBS )
-        message( $$INCLUDEPATH )
     }
 }
+
+message( $$LIBS )
+message( $$INCLUDEPATH )
 message ("")
 #DISTFILES += \
 #    rebarlinxconfig.pri
+
+DISTFILES += \
+    TODO.txt
