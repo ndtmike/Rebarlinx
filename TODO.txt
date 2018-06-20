@@ -1,6 +1,4 @@
 Todo list
 
-make status update function
 splash screen dialog
-test graph plot
 Complete SerialPortOpen

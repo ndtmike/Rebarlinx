@@ -68,19 +68,19 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
 
-    console = new Console;
-    console->setEnabled(false);
-    setCentralWidget(console);
-    serial = new QSerialPort(this);
-    status = new QLabel;
+    SerialConsole = new Console;
+    SerialConsole->setEnabled(false);
+    setCentralWidget(SerialConsole);
+    Serial = new QSerialPort(this);
+    Plot = new QwtPlot;
 
     CreateActions();
     CreateMenus();
     CreateStatusBar();
     CreateSplash();
 
-    QTimer* init_timer = new QTimer(this);
-        init_timer->singleShot(splashscreendelay, this, SLOT(CreateSplash())); //delay before splash screen
+//    QTimer* init_timer = new QTimer(this);
+//        init_timer->singleShot(splashscreendelay, this, SLOT(CreateSplash())); //delay before splash screen
 }
 
 MainWindow::~MainWindow()
@@ -136,10 +136,10 @@ void MainWindow::CreateActions()
     aboutQtAct->setStatusTip(tr("Show the Qt library's About box"));
     connect(aboutQtAct, &QAction::triggered, qApp, &QApplication::aboutQt);
 
-    connect(serial, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
+    connect(Serial, static_cast<void (QSerialPort::*)(QSerialPort::SerialPortError)>(&QSerialPort::error),
             this, &MainWindow::SerialPortHandleError);
-    connect(serial, &QSerialPort::readyRead, this, &MainWindow::SerialPortReadData);
-    connect(console, &Console::getData, this, &MainWindow::SerialPortWriteData);
+    connect(Serial, &QSerialPort::readyRead, this, &MainWindow::SerialPortReadData);
+    connect(SerialConsole, &Console::getData, this, &MainWindow::SerialPortWriteData);
 }
 
 /******************************************************************************
@@ -197,21 +197,10 @@ void MainWindow::CreateSplash()
 ******************************************************************************/
 void MainWindow::CreateStatusBar()
 {
-    status = new QLabel(" Not Connected ");
-    status->setAlignment(Qt::AlignHCenter);
-    status->setMinimumSize(status->sizeHint());
-
-//    formulaLabel = new QLabel;
-//    formulaLabel->setIndent(3);
-
-    statusBar()->addWidget(status);
-//    statusBar()->addWidget(formulaLabel, 1);
-
-//    connect(spreadsheet, SIGNAL(currentCellChanged(int, int, int, int)),
-//            this, SLOT(updateStatusBar()));
-//    connect(spreadsheet, SIGNAL(modified()),
-//            this, SLOT(spreadsheetModified()));
-//    updateStatusBar();
+    Status = new QLabel(" Not Connected ");
+    Status->setAlignment(Qt::AlignHCenter);
+    Status->setMinimumSize(Status->sizeHint());
+    statusBar()->addWidget(Status);
 }
 /******************************************************************************
 
@@ -237,8 +226,7 @@ void MainWindow::MenuActAbout()
 
     QMessageBox::about(this, tr("About Rebarlinx Software"), show);
 
-
-
+    ShowStatusMessage( "About Rebarlinx" );
 }
 
 /******************************************************************************
@@ -251,7 +239,7 @@ void MainWindow::MenuActAbout()
 ******************************************************************************/
 void MainWindow::MenuActCopy()
 {
-
+    ShowStatusMessage( "Copy Data" );
 }
 
 /******************************************************************************
@@ -265,7 +253,7 @@ void MainWindow::MenuActCopy()
 ******************************************************************************/
 void MainWindow::MenuActNewFile()
 {
-
+    ShowStatusMessage( "New File" );
 }
 
 /******************************************************************************
@@ -279,7 +267,7 @@ void MainWindow::MenuActNewFile()
 ******************************************************************************/
 void MainWindow::MenuActOpen()
 {
-
+    ShowStatusMessage( "Open File" );
 }
 
 /******************************************************************************
@@ -293,7 +281,37 @@ void MainWindow::MenuActOpen()
 ******************************************************************************/
 void MainWindow::MenuActPlot()
 {
+    Plot->setTitle( "Plot Demo" );
+    Plot->setCanvasBackground( Qt::white );
 
+    Plot->insertLegend( new QwtLegend() );
+
+    QwtPlotGrid *grid = new QwtPlotGrid();
+    grid->attach( Plot );
+
+    QwtPlotCurve *curve = new QwtPlotCurve();
+    curve->setTitle( "Some Points" );
+    curve->setPen( Qt::blue, 4 ),
+    curve->setRenderHint( QwtPlotItem::RenderAntialiased, true );
+
+    QwtSymbol *symbol = new QwtSymbol( QwtSymbol::Ellipse,
+        QBrush( Qt::yellow ), QPen( Qt::red, 2 ), QSize( 8, 8 ) );
+    curve->setSymbol( symbol );
+
+    QPolygonF points;
+    points << QPointF( 0.0, 4.4 ) << QPointF( 1.0, 3.3 )
+        << QPointF( 2.0, 4.5 ) << QPointF( 3.0, 6.8 )
+        << QPointF( 4.0, 7.9 ) << QPointF( 5.0, 7.1 );
+    curve->setSamples( points );
+
+    curve->attach( Plot );
+
+    Plot->replot();
+
+    Plot->resize(600, 400);
+    Plot->show();
+
+    ShowStatusMessage( "Plot" );
 }
 
 /******************************************************************************
@@ -307,7 +325,7 @@ void MainWindow::MenuActPlot()
 ******************************************************************************/
 void MainWindow::MenuActSave()
 {
-
+    ShowStatusMessage( "Save" );
 }
 
 /******************************************************************************
@@ -329,7 +347,7 @@ void MainWindow::SerialCheckPort()
     const QString noport = tr("No Available Ports") + '\n'
                               + tr("Check instrument is plugged in") + '\n'
                               + tr("or serial port installed properly") + '\n'
-                              + tr("then restart Veelinx");
+                              + tr("then restart Rebarlinx");
     const QString messageTitle = tr("Check Serial Port");
     const QString connected = tr("Connected to ");
     QList <QSerialPortInfo> availablePorts;
@@ -343,7 +361,7 @@ void MainWindow::SerialCheckPort()
             description = info.description();
             manufacturer = info.manufacturer();
             if(manufacturer == portmanufacturer){
-                serial->setPortName(portname);
+                Serial->setPortName(portname);
                 r = true;
             }
         if( r == true ) break;
@@ -353,6 +371,7 @@ void MainWindow::SerialCheckPort()
         QMessageBox::information(this,messageTitle,noport);
     }else{
         QMessageBox::information(this ,messageTitle , connected + portname );
+        ShowStatusMessage( "Serial Port Found" );
         SerialPortOpen(); // Found the instrument open the port
     }
 }
@@ -386,6 +405,7 @@ void MainWindow::SerialPortOpen()
 
 //        showStatusMessage(tr("Open error"));
 //    }
+    ShowStatusMessage( "Serial Port Open" );
 }
 
 /******************************************************************************
@@ -399,10 +419,11 @@ void MainWindow::SerialPortOpen()
 ******************************************************************************/
 void MainWindow::SerialPortClose()
 {
-    if (serial->isOpen())
-        serial->close();
-    console->setEnabled(false);
-//    showStatusMessage(tr("Disconnected"));
+    if (Serial->isOpen())
+        Serial->close();
+    SerialConsole->setEnabled(false);
+
+    ShowStatusMessage(tr("Serial Port Closed"));
 }
 
 /******************************************************************************
@@ -416,8 +437,8 @@ void MainWindow::SerialPortClose()
 ******************************************************************************/
 void MainWindow::SerialPortReadData()
 {
-    QByteArray data = serial->readAll();
-    console->putData(data);
+    QByteArray data = Serial->readAll();
+    SerialConsole->putData(data);
 }
 
 /******************************************************************************
@@ -431,7 +452,7 @@ void MainWindow::SerialPortReadData()
 ******************************************************************************/
 void MainWindow::SerialPortWriteData(const QByteArray &data)
 {
-    serial->write(data);
+    Serial->write(data);
 }
 
 /******************************************************************************
@@ -446,13 +467,21 @@ void MainWindow::SerialPortWriteData(const QByteArray &data)
 void MainWindow::SerialPortHandleError(QSerialPort::SerialPortError error)
 {
     if (error == QSerialPort::ResourceError) {
-//        QMessageBox::critical(this, tr("Critical Error"), Serial->errorString());
+        QMessageBox::critical(this, tr("Critical Error"), Serial->errorString());
         SerialPortClose();
     }
 }
-/*
-void MainWindow::showStatusMessage(const QString &message)
+
+/******************************************************************************
+
+  Function: ShowStatusMessage
+
+  Description:
+  ============
+
+
+******************************************************************************/
+void MainWindow::ShowStatusMessage(QString message)
 {
-    status->setText(message);
+    Status->setText( message );
 }
-*/

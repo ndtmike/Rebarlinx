@@ -49,6 +49,12 @@
 #include <QSerialPortInfo>
 #include <QtWidgets>
 
+#include <qwt_plot.h>
+#include <qwt_plot_curve.h>
+#include <qwt_plot_grid.h>
+#include <qwt_symbol.h>
+#include <qwt_legend.h>
+
 QT_BEGIN_NAMESPACE
 class QAction;
 class QActionGroup;
@@ -68,7 +74,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    Dialog(QWidget *parent = 0);
+//    Dialog(QWidget *parent = 0);
 
 private slots:
     void MenuActAbout();
@@ -87,14 +93,32 @@ private slots:
 
 
 private:
+    QByteArray Data;
+
+    struct SerialSettings {
+        QString name;
+        qint32 baudRate;
+        QString stringBaudRate;
+        QSerialPort::DataBits dataBits;
+        QString stringDataBits;
+        QSerialPort::Parity parity;
+        QString stringParity;
+        QSerialPort::StopBits stopBits;
+        QString stringStopBits;
+        QSerialPort::FlowControl flowControl;
+        QString stringFlowControl;
+        bool localEchoEnabled;
+    };
+
     void CreateActions();
     void CreateMenus();
     void CreateSplash();
     void CreateStatusBar();
 
+    SerialSettings CurrentSerialSettings;
+
     void SerialCheckPort();
-
-
+    void ShowStatusMessage( QString message );
 
     QMenu *FileMenu;
     QMenu *EditMenu;
@@ -111,18 +135,12 @@ private:
     QAction *PlotAct;
     QAction *saveAct;
 
-    QLabel *infoLabel;
 
-//    QwtPlot *Plot;
 
+    QwtPlot *Plot;
     QSerialPort *Serial;
-
-    QByteArray Data;
-//    void showStatusMessage(const QString &message);
-
-    QLabel *status;
-    Console *console;
-    QSerialPort *serial;
+    Console *SerialConsole;
+    QLabel *Status;
 };
 
 #endif // MAINWINDOW_H
