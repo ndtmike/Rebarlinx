@@ -58,6 +58,7 @@
 QT_BEGIN_NAMESPACE
 class QAction;
 class QActionGroup;
+class QDialog;
 class QLabel;
 class QMenu;
 class QSerialPort;
@@ -66,6 +67,7 @@ QT_END_NAMESPACE
 
 class Console;
 
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -73,8 +75,6 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-
-//    Dialog(QWidget *parent = 0);
 
 private slots:
     void MenuActAbout();
@@ -89,8 +89,7 @@ private slots:
     void SerialPortOpen();
     void SerialPortReadData();
     void SerialPortWriteData(const QByteArray &data);
-
-
+    void CreateSplash();
 
 private:
     QByteArray Data;
@@ -112,7 +111,6 @@ private:
 
     void CreateActions();
     void CreateMenus();
-    void CreateSplash();
     void CreateStatusBar();
 
     SerialSettings CurrentSerialSettings;
@@ -134,8 +132,6 @@ private:
     QAction *openAct;
     QAction *PlotAct;
     QAction *saveAct;
-
-
 
     QwtPlot *Plot;
     QSerialPort *Serial;

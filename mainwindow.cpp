@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
 #ifdef R_DEBUG
     const int splashscreendelay = 1;
 #else
-    const int splashscreendelay =100;
+    const int splashscreendelay = 100;
 #endif
 
 
@@ -79,8 +79,9 @@ MainWindow::MainWindow(QWidget *parent) :
     CreateStatusBar();
     CreateSplash();
 
-//    QTimer* init_timer = new QTimer(this);
-//        init_timer->singleShot(splashscreendelay, this, SLOT(CreateSplash())); //delay before splash screen
+/*    QTimer* init_timer = new QTimer(this);
+        init_timer->singleShot(splashscreendelay, this, SLOT(CreateSplash())); //delay before splash screen
+*/
 }
 
 MainWindow::~MainWindow()
@@ -182,8 +183,9 @@ void MainWindow::CreateMenus()
 ******************************************************************************/
 void MainWindow::CreateSplash()
 {
-//    Dialog dialog;
-//    dialog.show();
+/*    Splash = new QDialog(this);
+    Splash->setGeometry();
+    Splash->show();*/
 }
 
 /******************************************************************************
@@ -387,25 +389,20 @@ void MainWindow::SerialCheckPort()
 ******************************************************************************/
 void MainWindow::SerialPortOpen()
 {
-/*    SettingsDialog::Settings p = settings->settings();
-    serial->setPortName(p.name);
-    serial->setBaudRate(p.baudRate);
-    serial->setDataBits(p.dataBits);
-    serial->setParity(p.parity);
-    serial->setStopBits(p.stopBits);
-    serial->setFlowControl(p.flowControl);*/
-//    if (Serial->open(QIODevice::ReadWrite)) {
-//        Console->setEnabled(true);
-//        console->setLocalEchoEnabled(p.localEchoEnabled);
-//        showStatusMessage(tr("Connected to %1 : %2, %3, %4, %5, %6")
-//                          .arg(p.name).arg(p.stringBaudRate).arg(p.stringDataBits)
-//                          .arg(p.stringParity).arg(p.stringStopBits).arg(p.stringFlowControl));
-//    } else {
-//        QMessageBox::critical(this, tr("Error"), serial->errorString());
+    Serial->setBaudRate(9600);
+    Serial->setDataBits(QSerialPort::Data8);
+    Serial->setParity(QSerialPort::NoParity);
+    Serial->setStopBits(QSerialPort::OneStop);
+    Serial->setFlowControl(QSerialPort::NoFlowControl);
+    if (Serial->open(QIODevice::ReadWrite)) {
+        SerialConsole->setEnabled(true);
+        SerialConsole->setLocalEchoEnabled(true);
+        ShowStatusMessage(tr("Connected"));
+    } else {
+        QMessageBox::critical(this, tr("Error"), Serial->errorString());
 
-//        showStatusMessage(tr("Open error"));
-//    }
-    ShowStatusMessage( "Serial Port Open" );
+        ShowStatusMessage(tr("Open error"));
+    }
 }
 
 /******************************************************************************

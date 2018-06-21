@@ -41,6 +41,7 @@
 ****************************************************************************/
 
 #include <QApplication>
+#include <QSplashScreen>
 
 #include "mainwindow.h"
 
@@ -56,9 +57,19 @@
 
 int main(int argc, char *argv[])
 {
+
     QApplication a(argc, argv);
+
+    QPixmap pixmap("C:\\Users\\Mike\\Documents\\Projects\\Rebarlinx\\Rebarlinx_New\\splash.png");
+    QSplashScreen *splash = new QSplashScreen(pixmap);
+    splash->show();
+    splash->showMessage("Rebarlinx",Qt::AlignHCenter|Qt::AlignBottom,Qt::green); //fix this!!
+    a.thread()->sleep(2); // wait for just 1 second and then show main window
+    a.processEvents();
+
     MainWindow w;
     w.resize(1200,800);
     w.show();
+    splash->finish( &w );
     return a.exec();
 }

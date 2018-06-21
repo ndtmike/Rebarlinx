@@ -1,4 +1,4 @@
 Todo list
 
 splash screen dialog
-Complete SerialPortOpen
+Open comport after splash screen
