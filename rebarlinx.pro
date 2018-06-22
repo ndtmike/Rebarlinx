@@ -25,13 +25,15 @@ CONFIG += \
     C++11 \
     C++14
 
+RESOURCES     = application.qrc
+
 win32{
     RC_ICONS += ../icon/ndt_rebarlinx.ico
     VERSION = $$(REE_VERSION)
-    QMAKE_TARGET_COMPANY = James Instruments Inc.
-    QMAKE_TARGET_PRODUCT = Rebarlinx
-    QMAKE_TARGET_DESCRIPTION = Upload Software for James Instruments Rebarscope
-    QMAKE_TARGET_COPYRIGHT = @2018 James Instruments Inc.
+    QMAKE_TARGET_COMPANY = "James Instruments Inc."
+    QMAKE_TARGET_PRODUCT = "Rebarlinx"
+    QMAKE_TARGET_DESCRIPTION = "Upload Software for James Instruments Rebarscope"
+    QMAKE_TARGET_COPYRIGHT = "@2018 James Instruments Inc."
 
 #test for what compiler is to link proper libraries
     contains(QT_ARCH, i386) {

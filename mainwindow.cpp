@@ -61,13 +61,6 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
 {
-#ifdef R_DEBUG
-    const int splashscreendelay = 1;
-#else
-    const int splashscreendelay = 100;
-#endif
-
-
     SerialConsole = new Console;
     SerialConsole->setEnabled(false);
     setCentralWidget(SerialConsole);
@@ -77,11 +70,6 @@ MainWindow::MainWindow(QWidget *parent) :
     CreateActions();
     CreateMenus();
     CreateStatusBar();
-    CreateSplash();
-
-/*    QTimer* init_timer = new QTimer(this);
-        init_timer->singleShot(splashscreendelay, this, SLOT(CreateSplash())); //delay before splash screen
-*/
 }
 
 MainWindow::~MainWindow()
@@ -181,22 +169,6 @@ void MainWindow::CreateMenus()
   Creates the Menu items
 
 ******************************************************************************/
-void MainWindow::CreateSplash()
-{
-/*    Splash = new QDialog(this);
-    Splash->setGeometry();
-    Splash->show();*/
-}
-
-/******************************************************************************
-
-  Function: CreateStatuBar
-
-  Description:
-  ============
-  Creates the Menu items
-
-******************************************************************************/
 void MainWindow::CreateStatusBar()
 {
     Status = new QLabel(" Not Connected ");
@@ -223,11 +195,8 @@ void MainWindow::MenuActAbout()
                                        "Email: <a href=\"mailto:info@ndtjames.com?Subject=Rebarlinx\" target=\"_top\">info@ndtjames.com</a><br>"
                                        "Copyright 2017<br>");
     const QString version =  QString::QString("<br> Software Version <<br> <b>%1.%2.%3</b>").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH);
-
     QString show = about_rebarlinx + version;
-
     QMessageBox::about(this, tr("About Rebarlinx Software"), show);
-
     ShowStatusMessage( "About Rebarlinx" );
 }
 

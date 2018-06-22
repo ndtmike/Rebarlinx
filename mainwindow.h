@@ -89,7 +89,6 @@ private slots:
     void SerialPortOpen();
     void SerialPortReadData();
     void SerialPortWriteData(const QByteArray &data);
-    void CreateSplash();
 
 private:
     QByteArray Data;

@@ -14,6 +14,6 @@ REE_VERSION      = $${REE_VER_MAJ}.$${REE_VER_MIN}.$${REE_VER_PAT}
 DEFINES += VERSION_MAJOR="$$REE_VER_MAJ"\
        VERSION_MINOR="$$REE_VER_MIN"\
        VERSION_PATCH="$$REE_VER_PAT"\
-        R_DEBUG     #used as debug macro version
+        R_DEBUG\     #used as debug macro version
 
 

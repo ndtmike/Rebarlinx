@@ -42,6 +42,7 @@
 
 #include <QApplication>
 #include <QSplashScreen>
+#include <QString>
 
 #include "mainwindow.h"
 
@@ -52,23 +53,46 @@
   Description:
   ============
   invokes the qapplication
+  loads image from resource file
+  displays the splash screen and delays
+  displays Mainwindow
 
 ******************************************************************************/
 
 int main(int argc, char *argv[])
 {
+    QString programname ( "Rebarlinx" );//can not define string in project needs to go here
+    QString version = QString( "Version %1.%2.%3" ).arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH);
+    QString display = QString( "%1: %2" ).arg(programname).arg(version);
+
+#ifdef R_DEBUG
+    const int delay_seconds = 1;
+#else
+    const int delay_seconds = 3;
+#endif
+    const int pixel_size = 38;
+    const int app_width = 1200;
+    const int app_height = 800;
+
 
     QApplication a(argc, argv);
 
-    QPixmap pixmap("C:\\Users\\Mike\\Documents\\Projects\\Rebarlinx\\Rebarlinx_New\\splash.png");
+    QFont splashFont; //increase the font size for the splash screen
+    splashFont.setFamily("Arial");
+    splashFont.setBold(true);
+    splashFont.setItalic(true);
+    splashFont.setPixelSize(pixel_size);
+
+    QPixmap pixmap(":/splash.png"); //loads the image from the resource file
     QSplashScreen *splash = new QSplashScreen(pixmap);
+    splash->setFont(splashFont);
     splash->show();
-    splash->showMessage("Rebarlinx",Qt::AlignHCenter|Qt::AlignBottom,Qt::green); //fix this!!
-    a.thread()->sleep(2); // wait for just 1 second and then show main window
+    splash->showMessage(display,Qt::AlignHCenter|Qt::AlignBottom,Qt::black); //fix this!!
+    a.thread()->sleep(delay_seconds); // wait for just 1 second and then show main window
     a.processEvents();
 
     MainWindow w;
-    w.resize(1200,800);
+    w.resize( app_width, app_height );
     w.show();
     splash->finish( &w );
     return a.exec();
